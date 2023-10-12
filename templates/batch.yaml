@@ -1,0 +1,121 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: NAMESPACE
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  creationTimestamp: null
+  name: NAMESPACE-cronjob
+  namespace: NAMESPACE
+  labels:
+    app: app
+spec:
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+      name: NAMESPACE-cronjob
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+            - image: CONTAINER_IMAGE
+              imagePullPolicy: Always
+              name: NAMESPACE
+              env:
+                - name: MODEL_NAME
+                  value: MODEL_NAME_VALUE
+                - name: STATE
+                  value: Production
+                - name: MLFLOW_TRACKING_URI
+                  value: MLFLOW_TRACKING_URI_VALUE
+                - name: AWS_ACCESS_KEY_ID
+                  value: ACCESSKEY_AWS
+                - name: AWS_SECRET_ACCESS_KEY
+                  value: SECRETKEY_AWS
+                - name: AZURE_STORAGE_ACCESS_KEY
+                  value: ACCESSKEY_AZURE
+                - name: AZURE_STORAGE_CONNECTION_STRING
+                  value: SECRETKEY_AZURE
+                - name: MONGO_URL
+                  value: MONGOURL
+                - name: DB_NAME
+                  value: DBNAME
+                - name: COLLECTION_NAME
+                  value: COLLECTIONNAME
+                - name: BATCH_INPUT
+                  value: BATCH_INPUT_VALUE
+                - name: EXP_ID
+                  value: EXP_ID_VALUE
+                - name: VENDOR
+                  value: VENDOR_VALUE
+              resources:
+                requests:
+                  memory: "MIN_MEMORY"
+                  cpu: "MIN_CPU"
+                limits:
+                  memory: "MAX_MEMORY"
+                  cpu: "MAX_CPU"
+          restartPolicy: Never
+  schedule: "SCHEDULE"
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  creationTimestamp: null
+  name: NAMESPACE-cronjob-stage
+  namespace: NAMESPACE
+  labels:
+    app: app-stage
+spec:
+  jobTemplate:
+    metadata:
+      creationTimestamp: null
+      name: NAMESPACE-cronjob-stage
+    spec:
+      template:
+        metadata:
+          creationTimestamp: null
+        spec:
+          containers:
+            - image: CONTAINER_IMAGE
+              imagePullPolicy: Always
+              name: NAMESPACE-stage
+              env:
+                - name: MODEL_NAME
+                  value: MODEL_NAME_VALUE
+                - name: STATE
+                  value: Staging
+                - name: MLFLOW_TRACKING_URI
+                  value: MLFLOW_TRACKING_URI_VALUE
+                - name: AWS_ACCESS_KEY_ID
+                  value: ACCESSKEY_AWS
+                - name: AWS_SECRET_ACCESS_KEY
+                  value: SECRETKEY_AWS
+                - name: AZURE_STORAGE_ACCESS_KEY
+                  value: ACCESSKEY_AZURE
+                - name: AZURE_STORAGE_CONNECTION_STRING
+                  value: SECRETKEY_AZURE
+                - name: MONGO_URL
+                  value: MONGOURL
+                - name: DB_NAME
+                  value: DBNAME
+                - name: COLLECTION_NAME
+                  value: COLLECTIONNAME
+                - name: EXP_ID
+                  value: EXP_ID_VALUE
+                - name: BATCH_INPUT
+                  value: BATCH_INPUT_VALUE
+              resources:
+                requests:
+                  memory: "MIN_MEMORY"
+                  cpu: "MIN_CPU"
+                limits:
+                  memory: "MAX_MEMORY"
+                  cpu: "MAX_CPU"
+          restartPolicy: Never
+  schedule: "SCHEDULE"
+---

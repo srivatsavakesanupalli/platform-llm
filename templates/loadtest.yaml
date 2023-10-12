@@ -1,0 +1,24 @@
+apiVersion: locust.io/v1
+kind: LocustTest
+metadata:
+  name: MODEL_NAME_VALUE.test
+spec:
+  annotations:
+    master:
+      myapp.com/threads: '1000'
+      myapp.com/version: 2.1.0
+    worker:
+      myapp.com/version: 2.1.0
+  configMap: MODEL_NAME_VALUE
+  image: CONTAINER_IMAGE
+  labels:
+    master:
+      locust.io/role: master
+      myapp.com/testId: EXP_ID_VALUE
+    worker:
+      locust.io/role: worker
+      myapp.com/testId: EXP_ID_VALUE
+  masterCommandSeed: --locustfile /lotest/src/loadtest_MODEL_NAME_VALUE.py --host HOSTURL
+    --users 10000 --spawn-rate 1 --run-time 30m
+  workerCommandSeed: --locustfile /lotest/src/loadtest_MODEL_NAME_VALUE.py
+  workerReplicas: 5

@@ -1,0 +1,16 @@
+[
+    {
+        "name": "NousResearch/llama-2-7b-chat-hf",
+        "link": "https://huggingface.co/NousResearch/Llama-2-7b-chat-hf",
+        "peft": {
+            "LoRA": {
+                "lora_r": 8,
+                "lora_alpha": 16,
+                "lora_dropout": 0.1
+            }
+        },
+        "config": {
+            "padding": "right"
+        }
+    }
+]
