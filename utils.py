@@ -12,8 +12,6 @@ import numpy as np
 import os
 import functools
 import torch
-from torchvision import transforms
-from torchvision.models.feature_extraction import create_feature_extractor
 import mlflow
 import time
 from multiprocessing.pool import ThreadPool
@@ -27,15 +25,6 @@ from repo.mlflow_repo import MLFRepo
 EXP = get_collections()['exp']
 
 device = 'cuda' if torch.cuda.is_available() else 'cpu'
-
-preprocess = transforms.Compose([
-    transforms.Resize(256),
-    transforms.CenterCrop(224),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406],
-                         std=[0.229, 0.224, 0.225]),
-])
-
 
 def upload_file_to_s3(bucket_name, source_file_path, destination_object_key):
     s3_client = boto3.client('s3',
@@ -54,7 +43,7 @@ def list_s3_objects(exp_id, run_id):
                 region_name="ap-south-1")
     try:
         response = s3_client.list_objects_v2(Bucket='nocode-awone',
-                                     Prefix=f'platform_cv/{exp_id}/{run_id}')
+                                     Prefix=f'platform_llm/{exp_id}/{run_id}')
         return [d['Key'] for d in response['Contents']]
     except ClientError as e:
         logger.error(e)
@@ -90,8 +79,8 @@ def mapPreSignedURLs(objects, urls, threshold, exp_id, run_id):
     for class_ in d[threshold]:
         for file in d[threshold][class_]:
             file_name = '_'.join(file.split(os.sep)[-2:])
-            if f'platform_cv/{exp_id}/{run_id}/{file_name}' in objects:
-                mapping[class_].append(urls[objects.index(f'platform_cv/{exp_id}/{run_id}/{file_name}')])
+            if f'platform_llm/{exp_id}/{run_id}/{file_name}' in objects:
+                mapping[class_].append(urls[objects.index(f'platform_llm/{exp_id}/{run_id}/{file_name}')])
     return dict(mapping)
 
 
@@ -150,70 +139,6 @@ def unzip_file(zip_filepath: str, extract_location: str) -> None:
     """
     with zipfile.ZipFile(zip_filepath, 'r') as zip_ref:
         zip_ref.extractall(extract_location)
-
-
-def get_embeddings(list_of_ims, model):
-    return_nodes = {
-        "classifier.1": "classifier"
-    }
-    try:
-        extractor = create_feature_extractor(model, return_nodes=return_nodes)
-    except Exception as e:
-        logger.info(e)
-    if isinstance(list_of_ims, list):
-        ims = []
-        for impath in list_of_ims:
-            # try:
-            im = Image.open(impath).convert('RGB')
-            im_tensor = preprocess(im)[None]
-            ims.append(im_tensor)
-            # except:
-            #     continue
-        input_tensor = torch.cat(ims).to(device)
-    elif isinstance(list_of_ims, torch.Tensor):
-        input_tensor = list_of_ims
-    with torch.no_grad():
-        output = extractor(input_tensor)['classifier'].view(
-            len(input_tensor), 4096, -1).mean(-1)
-    return output
-
-def get_embeddings_for_unet(list_of_ims, model):
-    return_nodes = {
-        "encoder.43": "encoder"
-    }
-    extractor = create_feature_extractor(model, return_nodes=return_nodes)
-    if isinstance(list_of_ims, list):
-        ims = []
-        for impath in list_of_ims:
-            im = Image.open(impath).convert('RGB')
-            im_tensor = preprocess(im)[None]
-            ims.append(im_tensor)
-        input_tensor = torch.cat(ims)
-    elif isinstance(list_of_ims, torch.Tensor):
-        input_tensor = list_of_ims
-    with torch.no_grad():
-        output = extractor(input_tensor)['encoder'].view(
-            len(input_tensor), 512, -1).mean(-1).mean(0)
-    return output
-
-def get_embeddings_for_ssd(list_of_ims, model):
-    return_nodes = {
-        "base.conv7": "base"
-    }
-    extractor = create_feature_extractor(model, return_nodes=return_nodes)
-    if isinstance(list_of_ims, list):
-        ims = []
-        for impath in list_of_ims:
-            im = Image.open(impath).convert('RGB')
-            im_tensor = preprocess(im)[None]
-            ims.append(im_tensor)
-        input_tensor = torch.cat(ims)
-    elif isinstance(list_of_ims, torch.Tensor):
-        input_tensor = list_of_ims
-    with torch.no_grad():
-        output = extractor(input_tensor)['base'].view(
-            len(input_tensor), 1024, -1).mean(-1).mean(0)
-    return output
 
 def cosine_distance(vec1, vec2):
     dot_product = np.dot(vec1, vec2)

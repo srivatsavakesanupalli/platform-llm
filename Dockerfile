@@ -10,7 +10,6 @@ ADD exceptions exceptions
 ADD reader reader
 ADD repo repo
 ADD storage storage
-ADD models models
 ADD trainer trainer
 ADD templates templates
 ADD samples samples

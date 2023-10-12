@@ -50,7 +50,6 @@ from auth import (
     refresh_token,
 )
 
-
 try:
     VENDOR = os.environ["CLOUD_VENDOR"]
 except KeyError:
@@ -61,9 +60,8 @@ try:
 except KeyError:
     raise VendorNotConfigured(f"{VENDOR} is not configured to use within this platform")
 
-
-# app = FastAPI(root_path="/cibi/cv")
-app = FastAPI()
+app = FastAPI(root_path=os.environ["ROOT_PATH"])
+# app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -74,9 +72,9 @@ app.add_middleware(
 
 app.add_middleware(
     PrometheusMiddleware,
-    app_name="cv-api",
+    app_name="llm-api",
     group_paths=True,
-    prefix="cv",
+    prefix="llm",
     buckets=[0.1, 0.25, 0.5],
     filter_unhandled_paths=True,
     skip_paths=["/health", "/docs", "/metrics", "/", "/openapi.json", "/favicon.ico"],
@@ -162,7 +160,7 @@ async def create_project(
     project_data = {
         "proj_name": project_name,
         "proj_id": project_id,
-        "proj_type": "cv",
+        "proj_type": "llm",
         "description": description,
         "username": username,
     }

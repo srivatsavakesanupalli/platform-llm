@@ -7,7 +7,6 @@ ARG SKLEARN_ALLOW_DEPRECATED_SKLEARN_PACKAGE_INSTALL=True
 COPY inference/requirements.txt requirements.txt
 RUN pip3 install -r requirements.txt
 COPY inference .
-COPY models models
 COPY exceptions exceptions
 COPY storage storage
 COPY utils.py utils.py

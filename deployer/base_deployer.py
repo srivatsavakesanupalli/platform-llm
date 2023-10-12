@@ -18,7 +18,7 @@ class BaseDeployer(ABC):
         self.in_cluster = int(os.getenv('IN_CLUSTER', '1'))
         self.type = config.type
         self.schedule = config.schedule
-        self.image = f'{self.image_repo}/cv:{self.type}'
+        self.image = f'{self.image_repo}/llm:{self.type}'
         self.batch_input = config.batch_input
         if self.type == 'batch':
             if not self.schedule:

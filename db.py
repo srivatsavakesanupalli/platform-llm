@@ -18,7 +18,7 @@ POSTGRES_URL = os.getenv('POSTGRES_URL', 'postgresql://postgres:f3lt0J0fRl@local
 # POSTGRES_URL = 'postgresql://postgres:f3lt0J0fRl@postgresdb-postgresql.postgres.svc.cluster.local:5432/postgres'
 SQL_ENGINE = create_engine(POSTGRES_URL, encoding='utf-8')
 
-class CVParams(SQLModel, table=True, extend_existing=True):
+class LLMParams(SQLModel, table=True, extend_existing=True):
     id: Optional[str] = Field(primary_key=True)
     run_id: str
     experiment_name: str
@@ -27,15 +27,6 @@ class CVParams(SQLModel, table=True, extend_existing=True):
     step: Optional[int] = 0
     timestamp: datetime = Field(default=datetime.now())
     metric_type: Optional[str] = None
-
-class CVAugmentations(SQLModel, table=True, extend_existing=True):
-    id: Optional[str] = Field(primary_key=True)
-    run_id: str
-    experiment_name: str
-    augmentation_type: str
-    param_name: str
-    param_value: str
-    timestamp: datetime = Field(default=datetime.now())
 
 try:
     SQLModel.metadata.create_all(SQL_ENGINE)
@@ -47,39 +38,14 @@ def push_to_postgres(params, run_id, experiment_id, step=0, metric_type=None, en
     with Session(engine) as session:
         for param in params:
             row_id = uuid4().hex[:8]
-            instance = CVParams(id=row_id, run_id=run_id, experiment_name=experiment_id, param_name=param, param_value=params[param], step=step, timestamp=timestamp, metric_type=metric_type)
-            session.add(instance)
-        session.commit()
-
-def push_aug_to_postgres(params, run_id, experiment_id, augmentation_type, engine=SQL_ENGINE):
-    timestamp = datetime.now()
-    with Session(engine) as session:
-        for param in params:
-            row_id = uuid4().hex[:8]
-            instance = CVAugmentations(
-                id=row_id,
-                run_id=run_id,
-                experiment_name=experiment_id,
-                augmentation_type=augmentation_type,
-                param_name=param,
-                param_value=params[param],
-                timestamp=timestamp
-            )
+            instance = LLMParams(id=row_id, run_id=run_id, experiment_name=experiment_id, param_name=param, param_value=params[param], step=step, timestamp=timestamp, metric_type=metric_type)
             session.add(instance)
         session.commit()
 
 def cleanup_postgres(experiment_id, engine=SQL_ENGINE):
-    logger.warning(f'Cleaning up CV data for the exp : {experiment_id}')
+    logger.warning(f'Cleaning up LLM data for the exp : {experiment_id}')
     with Session(engine) as session:
-        statement = select(CVParams).where(CVParams.experiment_name == experiment_id)
-        results = session.exec(statement)
-        all_rows = results.all()
-        logger.info(f'Removing {len(all_rows)} records')
-        for result in all_rows:
-            session.delete(result)
-        session.commit()
-
-        statement = select(CVParams).where(CVAugmentations.experiment_name == experiment_id)
+        statement = select(LLMParams).where(LLMParams.experiment_name == experiment_id)
         results = session.exec(statement)
         all_rows = results.all()
         logger.info(f'Removing {len(all_rows)} records')
@@ -89,9 +55,9 @@ def cleanup_postgres(experiment_id, engine=SQL_ENGINE):
 
 def read_from_postgres(metric, run_id, experiment_id, engine=SQL_ENGINE):
     with Session(engine) as session:
-        statement = select(CVParams).where(CVParams.experiment_name == experiment_id, \
-                                          CVParams.run_id == run_id, \
-                                          CVParams.param_name == metric)
+        statement = select(LLMParams).where(LLMParams.experiment_name == experiment_id, \
+                                          LLMParams.run_id == run_id, \
+                                          LLMParams.param_name == metric)
         results = session.exec(statement)
         all_rows = results.all()
         return all_rows

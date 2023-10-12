@@ -1,4 +1,5 @@
 from .base_trainer import BaseTrainer
+from configs.input_config import InputConfig
 from transformers import AutoModelForSequenceClassification
 from transformers import AutoTokenizer
 from transformers import BitsAndBytesConfig
@@ -18,44 +19,25 @@ from datasets import load_dataset
 
 class ClassificationTrainer(BaseTrainer):
     def __init__(
-        self,
-        model_id,
-        learning_rate=2e-5,
-        batch_size=4,
-        gradient_accumulation_steps=2,
-        n_epochs=2,
-        output_dir="model",
-        load_in_4bit=True,
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype="float16",
-        bnb_4bit_use_double_quant=False,
-        use_peft=True,
-        peft_method="LoRA",
-        lora_r=8,
-        lora_alpha=16,
-        lora_dropout=0.1,
+        self, config: InputConfig
     ):
-        self.model_id = model_id
         self.bnb_config = BitsAndBytesConfig(
-            load_in_4bit=load_in_4bit,
-            bnb_4bit_quant_type=bnb_4bit_quant_type,
-            bnb_4bit_compute_dtype=getattr(torch, bnb_4bit_compute_dtype),
-            bnb_4bit_use_double_quant=bnb_4bit_use_double_quant,
+            load_in_4bit=True,
+            bnb_4bit_quant_type="nf4",
+            bnb_4bit_compute_dtype=getattr(torch, "float16"),
+            bnb_4bit_use_double_quant=False,
         )
+        self.architecture = config.model.architecture
         self.model = self.load_model()
         self.tokenizer = self.load_tokenizer()
-        self.use_peft = use_peft
         if self.use_peft:
-            self.peft_method = peft_method
+            self.peft_method = config.model.peft_method
             if self.peft_method == "LoRA":
-                self.lora_r = lora_r
-                self.lora_alpha = lora_alpha
-                self.lora_dropout = lora_dropout
-
-            self.model = self.load_peft_model()
+                self.lora_r = config.model.peft.lora.r
+                self.lora_alpha = config.model.peft.lora.alpha
+                self.lora_dropout = config.model.peft.lora.dropout
+        self.model = self.load_peft_model()
         self.lr = learning_rate
-        self.batch_size = batch_size
-        self.device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
         self.gradient_accumulation_steps = gradient_accumulation_steps
         self.n_epochs = n_epochs
         self.accelerator = Accelerator(
@@ -64,14 +46,14 @@ class ClassificationTrainer(BaseTrainer):
         self.output_dir = output_dir
 
     def load_tokenizer(self):
-        tokenizer = AutoTokenizer.from_pretrained(self.model_id, trust_remote_code=True)
+        tokenizer = AutoTokenizer.from_pretrained(self.architecture, trust_remote_code=True)
         tokenizer.pad_token = tokenizer.eos_token
         tokenizer.padding_side = "right"
         return tokenizer
 
     def load_model(self):
         model = AutoModelForSequenceClassification.from_pretrained(
-            self.model_id,
+            self.architecture,
             quantization_config=self.bnb_config,
             device_map={"": 0},
             num_labels=1,

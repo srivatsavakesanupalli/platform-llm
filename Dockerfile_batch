@@ -10,6 +10,5 @@ COPY inference .
 COPY db.py db.py
 COPY utils.py utils.py
 COPY storage storage
-COPY models models
 COPY exceptions exceptions
 CMD ["sh", "download_artifacts_batch.sh"]

@@ -15,6 +15,7 @@ class BaseTrainer(ABC):
         self.username = config.username
         self.exp_id = config.exp_id
         self.data_config = config.data
+        self.architecture = config.model.architecture
         self.learning_rate = config.model.learning_rate
         self.num_epochs = config.model.num_epochs
         self.type = config.model.type
@@ -22,7 +23,9 @@ class BaseTrainer(ABC):
         self.test_batch_size = config.model.test_batch_size
         self.num_epochs = config.model.num_epochs
         self.learning_rate = config.model.learning_rate
+        self.gradient_accumulation_steps = config.model.gradient_accumulation_steps
         self.threshold = config.model.threshold
+        self.use_peft = config.model.use_peft
         self.type = config.model.type
         self.model_name = f"{self.proj_id.lower()}"
         self.repo = MLFRepo(self.exp_id)

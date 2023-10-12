@@ -5,10 +5,7 @@ import os
 import json
 from PIL import Image
 import time
-from torchvision import transforms
 import torch
-# from torchcam.utils import overlay_mask
-from torchvision.transforms.functional import to_pil_image
 import numpy as np
 import cv2
 import base64
@@ -48,16 +45,6 @@ class ClassificationInfer(BaseInfer):
         with open(json_file_path, 'r') as f:
             labels_loaded = json.load(f)
         return labels_loaded
-
-    def preprocess(self, image: Image):
-        f = transforms.Compose([
-            transforms.Resize(256),
-            transforms.CenterCrop(224),
-            transforms.ToTensor(),
-            transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[
-                0.229, 0.224, 0.225]),
-        ])
-        return f(image)
 
     def infer(self, image: Image):
         input_tensor = self.preprocess(image)

@@ -21,7 +21,7 @@ class TRAINDeployer():
         self.min_cpu = config.min_cpu
         self.max_cpu = config.max_cpu
         self.backend = config.backend
-        self.image = f"{os.getenv('IMAGE_REPO', '668572716132.dkr.ecr.ap-south-1.amazonaws.com')}/platform-cv:latest"
+        self.image = f"{os.getenv('IMAGE_REPO', '668572716132.dkr.ecr.ap-south-1.amazonaws.com')}/platform-llm:latest"
         self.mlflow_uri,\
             self.mongo,\
             self.db = self.get_env()
