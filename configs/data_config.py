@@ -10,4 +10,5 @@ class DataSplitConfig(BaseModel):
 class DataConfig(BaseModel):
     '''Base configuration for specifying input data parameters'''
     input:  str
+    target: str
     test_split: DataSplitConfig

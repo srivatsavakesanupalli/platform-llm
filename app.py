@@ -173,7 +173,26 @@ async def create_project(
     )
     return project_data
 
-
+@app.post('/data_preview')
+async def get_data_preview(current_user: Annotated[User, Depends(get_current_active_user)], input_path: str):
+    # Read from a public dataset
+    extn = input_path.split('.')[-1]
+    # Support for azure SAS urls
+    if '?' in extn:
+        extn = extn[:extn.index('?')]
+    if extn == 'csv':
+        data = pd.read_csv(input_path)
+    elif extn == 'parquet':
+        data = pd.read_parquet(input_path)
+    else:
+        raise HTTPException(
+            status_code=501, detail=f"File format {extn} is not supported")
+    rows, columns = data.shape
+    sample_data = data.head(100).to_json()
+    response = {'sample_data': sample_data,
+                'n_rows': rows, 'n_columns': columns}
+    return response
+    
 @app.post("/create_exp")
 async def create_exp(
     current_user: Annotated[User, Depends(get_current_active_user)],

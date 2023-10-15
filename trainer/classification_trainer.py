@@ -21,29 +21,26 @@ class ClassificationTrainer(BaseTrainer):
     def __init__(
         self, config: InputConfig
     ):
+        super().__init__(config)
         self.bnb_config = BitsAndBytesConfig(
             load_in_4bit=True,
             bnb_4bit_quant_type="nf4",
             bnb_4bit_compute_dtype=getattr(torch, "float16"),
             bnb_4bit_use_double_quant=False,
         )
-        self.architecture = config.model.architecture
         self.model = self.load_model()
         self.tokenizer = self.load_tokenizer()
         if self.use_peft:
             self.peft_method = config.model.peft_method
             if self.peft_method == "LoRA":
-                self.lora_r = config.model.peft.lora.r
-                self.lora_alpha = config.model.peft.lora.alpha
-                self.lora_dropout = config.model.peft.lora.dropout
-        self.model = self.load_peft_model()
-        self.lr = learning_rate
-        self.gradient_accumulation_steps = gradient_accumulation_steps
-        self.n_epochs = n_epochs
+                self.lora_r = config.model.peft.r
+                self.lora_alpha = config.model.peft.alpha
+                self.lora_dropout = config.model.peft.dropout
+            self.model = self.load_peft_model()
         self.accelerator = Accelerator(
             gradient_accumulation_steps=self.gradient_accumulation_steps
         )
-        self.output_dir = output_dir
+        self.output_dir = "temp/model"
 
     def load_tokenizer(self):
         tokenizer = AutoTokenizer.from_pretrained(self.architecture, trust_remote_code=True)
@@ -64,24 +61,25 @@ class ClassificationTrainer(BaseTrainer):
         return model
 
     def load_peft_model(self):
-        if self.peft_method == "LoRA":
-            self.peft_config = LoraConfig(
-                lora_alpha=self.lora_alpha,
-                lora_dropout=self.lora_dropout,
-                r=self.lora_r,
-                bias="none",
-                task_type="SEQ_CLS",
-                target_modules=["q_proj", "k_proj", "v_proj", "score"],
-            )
-        return PeftModel(self.model, self.peft_config)
+        if self.use_peft:
+            if self.peft_method == "LoRA":
+                self.peft_config = LoraConfig(
+                    lora_alpha=self.lora_alpha,
+                    lora_dropout=self.lora_dropout,
+                    r=self.lora_r,
+                    bias="none",
+                    task_type="SEQ_CLS",
+                    target_modules=["q_proj", "k_proj", "v_proj", "score"],
+                )
+            return PeftModel(self.model, self.peft_config)
 
     def print_trainable_params(self):
         logger.info(self.model.print_trainable_params())
 
     def fit_model(self, train_dataloader):
         criterion = nn.BCEWithLogitsLoss()
-        optimizer = AdamW(self.model.parameters(), lr=self.lr)
-        for epoch in range(self.n_epochs):
+        optimizer = AdamW(self.model.parameters(), lr=self.learning_rate)
+        for epoch in range(self.num_epochs):
             self.model.train()
             logger.info(f"Running Epoch: {epoch+1}")
             total_loss = 0
@@ -108,7 +106,7 @@ class ClassificationTrainer(BaseTrainer):
                 total_loss += loss.item()
 
             avg_loss = total_loss / len(train_dataloader)
-            logger.info(f"Epoch [{epoch + 1}/{self.n_epochs}] - Loss: {avg_loss}")
+            logger.info(f"Epoch [{epoch + 1}/{self.num_epochs}] - Loss: {avg_loss}")
 
     def evaluate_fn(self, data_loader):
         self.model.eval()
