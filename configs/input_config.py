@@ -1,5 +1,4 @@
 from .data_config import DataConfig
-from .trainer_config import TrainerConfig
 from pydantic import BaseModel
 
 
@@ -8,4 +7,4 @@ class InputConfig(BaseModel):
     exp_id: str
     username: str
     data: DataConfig
-    model: TrainerConfig
+    model: BaseModel
